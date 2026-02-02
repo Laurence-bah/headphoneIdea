@@ -32,8 +32,16 @@ const simulateBtn = document.querySelector("#simulate-btn");
 const connectionStatus = document.querySelector("#connection-status");
 const cameraBtn = document.querySelector("#enable-camera-btn");
 const cameraStatus = document.querySelector("#camera-status");
+const inputDeviceSelect = document.querySelector("#input-device");
+const startCaptureBtn = document.querySelector("#start-capture-btn");
+const stopCaptureBtn = document.querySelector("#stop-capture-btn");
+const captureStatus = document.querySelector("#capture-status");
 const canvas = document.querySelector("#sound-map");
 const ctx = canvas.getContext("2d");
+const conversationBoost = document.querySelector("#conversation-boost");
+const backgroundReduction = document.querySelector("#background-reduction");
+const directionalFocus = document.querySelector("#directional-focus");
+const rubinsteinGain = document.querySelector("#rubinstein-gain");
 
 let draggingSource = null;
 
@@ -47,7 +55,14 @@ const audioState = {
   connected: false,
   analysisActive: false,
   cameraActive: false,
+  captureActive: false,
 };
+
+let audioContext = null;
+let micStream = null;
+let micSource = null;
+let micGain = null;
+let outputGain = null;
 
 const updateSourceList = () => {
   sourceList.innerHTML = "";
@@ -137,6 +152,77 @@ const updateCameraStatus = (message) => {
   cameraStatus.textContent = `Camera: ${message}`;
 };
 
+const updateCaptureStatus = (message) => {
+  captureStatus.textContent = `Capture: ${message}`;
+};
+
+const getAudioConstraints = () => {
+  const deviceId = inputDeviceSelect?.value;
+  return deviceId ? { audio: { deviceId: { exact: deviceId } } } : { audio: true };
+};
+
+const updateRubinsteinGain = () => {
+  if (!micGain) return;
+  const boost = Number(conversationBoost.value) / 100;
+  const reduction = Number(backgroundReduction.value) / 100;
+  const focus = Number(directionalFocus.value) / 100;
+  const motionGain = Number(rubinsteinGain.value) / 100;
+  const computedGain = Math.max(0, (boost * 0.6 + focus * 0.4) * motionGain * (1 - reduction * 0.5));
+  micGain.gain.value = Math.min(3, computedGain);
+};
+
+const startCapture = async () => {
+  if (audioState.captureActive) return;
+  if (!navigator.mediaDevices?.getUserMedia) {
+    updateCaptureStatus("Microphone API unavailable.");
+    return;
+  }
+
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia(getAudioConstraints());
+    audioContext = audioContext ?? new AudioContext();
+    micSource = audioContext.createMediaStreamSource(micStream);
+    micGain = audioContext.createGain();
+    outputGain = audioContext.createGain();
+
+    updateRubinsteinGain();
+    outputGain.gain.value = 0.9;
+
+    micSource.connect(micGain).connect(outputGain).connect(audioContext.destination);
+    audioState.captureActive = true;
+    updateCaptureStatus("Live mic capture streaming to headphones.");
+    startCaptureBtn.disabled = true;
+    stopCaptureBtn.disabled = false;
+  } catch (error) {
+    updateCaptureStatus("Microphone permission denied.");
+  }
+};
+
+const stopCapture = () => {
+  if (!audioState.captureActive) return;
+  micStream?.getTracks().forEach((track) => track.stop());
+  micSource?.disconnect();
+  micGain?.disconnect();
+  outputGain?.disconnect();
+  audioState.captureActive = false;
+  updateCaptureStatus("Off");
+  startCaptureBtn.disabled = false;
+  stopCaptureBtn.disabled = true;
+};
+
+const populateInputDevices = async () => {
+  if (!navigator.mediaDevices?.enumerateDevices) return;
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const inputs = devices.filter((device) => device.kind === "audioinput");
+  inputDeviceSelect.innerHTML = "";
+  inputs.forEach((device, index) => {
+    const option = document.createElement("option");
+    option.value = device.deviceId;
+    option.textContent = device.label || `Microphone ${index + 1}`;
+    inputDeviceSelect.append(option);
+  });
+};
+
 const connectHeadphones = async () => {
   if (!navigator.bluetooth) {
     updateConnectionStatus("Web Bluetooth not supported in this browser.");
@@ -222,6 +308,13 @@ connectBtn.addEventListener("click", connectHeadphones);
 startBtn.addEventListener("click", startAnalysis);
 simulateBtn.addEventListener("click", randomizeSources);
 cameraBtn.addEventListener("click", enableCamera);
+startCaptureBtn.addEventListener("click", startCapture);
+stopCaptureBtn.addEventListener("click", stopCapture);
+conversationBoost.addEventListener("input", updateRubinsteinGain);
+backgroundReduction.addEventListener("input", updateRubinsteinGain);
+directionalFocus.addEventListener("input", updateRubinsteinGain);
+rubinsteinGain.addEventListener("input", updateRubinsteinGain);
 
 updateSourceList();
 drawSources();
+populateInputDevices();

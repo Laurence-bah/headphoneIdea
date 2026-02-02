@@ -20,6 +20,15 @@
           <button id="start-analysis-btn" class="ghost">Start room analysis</button>
         </div>
         <p id="connection-status" class="status">Status: Not connected</p>
+        <div class="capture-controls">
+          <label>
+            Input device
+            <select id="input-device"></select>
+          </label>
+          <button id="start-capture-btn" class="primary">Start live capture</button>
+          <button id="stop-capture-btn" class="ghost" disabled>Stop capture</button>
+          <p id="capture-status" class="status">Capture: Off</p>
+        </div>
       </div>
       <aside class="card">
         <h2>How it works</h2>
@@ -72,13 +81,17 @@
             Directional focus
             <input id="directional-focus" type="range" min="0" max="100" value="65" />
           </label>
+          <label>
+            Rubinstein micro-motion gain
+            <input id="rubinstein-gain" type="range" min="0" max="200" value="110" />
+          </label>
         </div>
         <div class="notice">
           <h3>Micro-motion pipeline (prototype)</h3>
           <p>
-            This UI assumes Eulerian video magnification techniques inspired by Michael Rubinstein’s
-            research are available. The current demo simulates the output while the full vision
-            pipeline is wired in.
+            The live capture path applies a simulated Rubinstein-style gain stage to the microphone
+            feed. The UI is ready for integrating Eulerian video magnification or motion-informed
+            audio spatialization once the vision pipeline is available.
           </p>
         </div>
       </section>
