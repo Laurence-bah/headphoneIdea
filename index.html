@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nothing Ear(3) Spatial Hearing Lab</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Spatial hearing prototype</p>
+        <h1>Nothing Ear(3) Conversation Focus</h1>
+        <p class="subtitle">
+          Visualize where sound is coming from, select what to amplify, and stream
+          the mix to your Nothing Ear(3) headphones.
+        </p>
+        <div class="hero-actions">
+          <button id="connect-btn" class="primary">Connect headphones</button>
+          <button id="start-analysis-btn" class="ghost">Start room analysis</button>
+        </div>
+        <p id="connection-status" class="status">Status: Not connected</p>
+        <div class="capture-controls">
+          <label>
+            Input device
+            <select id="input-device"></select>
+          </label>
+          <button id="start-capture-btn" class="primary">Start live capture</button>
+          <button id="stop-capture-btn" class="ghost" disabled>Stop capture</button>
+          <p id="capture-status" class="status">Capture: Off</p>
+        </div>
+      </div>
+      <aside class="card">
+        <h2>How it works</h2>
+        <ol>
+          <li>Capture audio + video from the room.</li>
+          <li>Detect micro-motions (Rubinstein et al.) to localize sound.</li>
+          <li>Boost the sources you care about in real time.</li>
+        </ol>
+        <button id="enable-camera-btn" class="ghost">Enable camera for micro-motion</button>
+        <p id="camera-status" class="status">Camera: Off</p>
+      </aside>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Room sound map</h2>
+          <div class="legend">
+            <span class="legend-dot conversation"></span> Conversation
+            <span class="legend-dot appliance"></span> Appliance
+            <span class="legend-dot traffic"></span> Traffic
+          </div>
+        </div>
+        <canvas id="sound-map" width="720" height="420" aria-label="Sound map"></canvas>
+        <div class="panel-footer">
+          <p>
+            Drag sources to adjust their position. The size of the wave indicates intensity.
+          </p>
+          <button id="simulate-btn" class="ghost">Simulate new sounds</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Source mixer</h2>
+        <div id="source-list" class="source-list"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Adaptive amplification</h2>
+        <div class="sliders">
+          <label>
+            Conversation boost
+            <input id="conversation-boost" type="range" min="0" max="200" value="120" />
+          </label>
+          <label>
+            Background reduction
+            <input id="background-reduction" type="range" min="0" max="100" value="40" />
+          </label>
+          <label>
+            Directional focus
+            <input id="directional-focus" type="range" min="0" max="100" value="65" />
+          </label>
+          <label>
+            Rubinstein micro-motion gain
+            <input id="rubinstein-gain" type="range" min="0" max="200" value="110" />
+          </label>
+        </div>
+        <div class="notice">
+          <h3>Micro-motion pipeline (prototype)</h3>
+          <p>
+            The live capture path applies a simulated Rubinstein-style gain stage to the microphone
+            feed. The UI is ready for integrating Eulerian video magnification or motion-informed
+            audio spatialization once the vision pipeline is available.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Prototype only. Web Bluetooth/Web Audio support varies by browser and device firmware.
+      </p>
+    </footer>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
